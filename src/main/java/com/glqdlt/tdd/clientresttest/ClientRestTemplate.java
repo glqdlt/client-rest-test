@@ -4,6 +4,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 
+/**
+ * @author glqdlt
+ * 2019-02-14
+ */
 @Configuration
 public class ClientRestTemplate {
 
