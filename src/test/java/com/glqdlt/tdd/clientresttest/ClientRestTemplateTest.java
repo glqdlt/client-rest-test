@@ -5,10 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -78,6 +80,34 @@ public class ClientRestTemplateTest {
         String jsonBody = (String) resultRaw.get("data");
         Assert.assertEquals(200,responseEntity.getStatusCodeValue());
         Assert.assertEquals(stub,jsonBody);
+    }
+
+    @Test
+    public void simple_텍스트파일이_있을_것이다() throws Exception {
+        FileSystemResource textFile = new FileSystemResource(ClassLoader.getSystemResource("simple.txt").getPath());
+        Assert.assertTrue(textFile.exists());
+    }
+
+    @Test
+    public void POST_MULTI_FORM_200을_예상() throws Exception {
+        final String stub = "hello";
+        FileSystemResource textFile = new FileSystemResource(ClassLoader.getSystemResource("simple.txt").getPath());
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        MultiValueMap<String,Object> body = new LinkedMultiValueMap<>();
+        body.add("fileName",textFile.getFilename());
+        body.add("file",textFile);
+
+        HttpEntity<MultiValueMap> entity = new HttpEntity<>(body,httpHeaders);
+
+        ResponseEntity<String> aaaa = restClient.postForEntity(POST_URL, entity, String.class);
+
+        Map resultRaw = parseJson(aaaa.getBody());
+        Map file = (Map) resultRaw.get("files");
+        String simpleText = (String) file.get("file");
+        Assert.assertEquals(stub,simpleText);
     }
 
     private String generateJsonString(Map obj) throws JsonProcessingException {
