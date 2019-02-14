@@ -1,17 +1,20 @@
 package com.glqdlt.tdd.clientresttest;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -49,15 +52,40 @@ public class ClientRestTemplateTest {
         UriComponentsBuilder urlBuild = UriComponentsBuilder.fromHttpUrl(GET_URL);
         urlBuild.queryParam("greet",stub);
 
-        ResponseEntity<String> aaa = restClient.getForEntity(urlBuild.toUriString(), String.class, entity);
-        Map resultRaw = convertJson(aaa.getBody());
+        ResponseEntity<String> responseEntity = restClient.getForEntity(urlBuild.toUriString(), String.class, entity);
+        Map resultRaw = parseJson(responseEntity.getBody());
         Map args = (Map) resultRaw.get("args");
         String echo = (String) args.get("greet");
+        Assert.assertEquals(200,responseEntity.getStatusCodeValue());
         Assert.assertEquals(stub,echo);
-
     }
 
-    private Map convertJson(String body){
+    @Test
+    public void POST_으로_연결_후_200을_예상() throws Exception {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        Map<String,Object> body = new HashMap<>();
+        body.put("greet","hello");
+
+        final String stub = generateJsonString(body);
+
+        HttpEntity<String> entity = new HttpEntity<>(stub,httpHeaders);
+
+        ResponseEntity<String> responseEntity = restClient.postForEntity(POST_URL, entity, String.class);
+        Map resultRaw = parseJson(responseEntity.getBody());
+
+        String jsonBody = (String) resultRaw.get("data");
+        Assert.assertEquals(200,responseEntity.getStatusCodeValue());
+        Assert.assertEquals(stub,jsonBody);
+    }
+
+    private String generateJsonString(Map obj) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+            return objectMapper.writeValueAsString(obj);
+    }
+
+    private Map parseJson(String body){
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             return objectMapper.readValue(body, Map.class);
